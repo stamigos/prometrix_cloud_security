@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sites</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="{% static 'css/main.css' %}" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container col-md-6">
+<div class="panel-group" id="accordion">
+{% for site in sites %}
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a data-toggle="collapse" data-parent="#accordion" href="#collapse{{ site.id }}">
+        Site: {{ site.id }}</a>
+      </h4>
+    </div>
+    <div id="collapse{{ site.id }}" class="panel-collapse collapse out">
+      <div class="panel-body">
+          <ul class="list-group">
+            <li class="list-group-item">Index: {{ site.index }}</li>
+            <li class="list-group-item">Description: {{ site.description }}</li>
+            <li class="list-group-item">Enabled: {{ site.enabled }}</li>
+            <li class="list-group-item">Location: {{ site.location }}</li>
+            <li class="list-group-item">Type: {{ site.type }}</li>
+            <li class="list-group-item">User:
+                  <ul class="list-group">
+                      {% for user in site.users.all %}
+                        <li class="list-group-item">{{ user }}</li>
+                      {% endfor %}
+                  </ul>
+            </li>
+          </ul>
+      </div>
+    </div>
+  </div>
+{% endfor %}
+</div>
+{#<ul>#}
+{#{% for site in sites %}#}
+{#    <li>#}
+{#        <ul>#}
+{#            <li>Index: {{ site.index }}</li>#}
+{#            <li>Description: {{ site.description }}</li>#}
+{#            <li>Enabled: {{ site.enabled }}</li>#}
+{#            <li>Location: {{ site.location }}</li>#}
+{#            <li>Type: {{ site.type }}</li>#}
+{#            <li>User:#}
+{#                <ul>#}
+{#                    {% for user in site.users.all %}#}
+{#                        <li>{{ user }}</li>#}
+{#                    {% endfor %}#}
+{#                </ul>#}
+{#            </li>#}
+{#        </ul>#}
+{#    </li>#}
+{#{% endfor %}#}
+{#</ul>#}
+</div>
+</body>
+</html>

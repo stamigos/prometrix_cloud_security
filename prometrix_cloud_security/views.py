@@ -1,24 +1,136 @@
-from django.contrib.auth import authenticate
-from django.contrib import messages
-from django.shortcuts import render, redirect, reverse
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+
+from .models import Site, Sensor, Camera, AlarmZone
 
 
-def login(request):
-    if request.method == 'GET':
-        return render(request, 'login.html')
-    user = authenticate(username=request.POST.get("username"), password=request.POST.get("password"))
-    if user is not None:
-        # the password verified for the user
-        if user.is_active:
-            messages.info(request, "User is valid, active and authenticated")
-            return redirect(reverse('index'))
-        else:
-            messages.error(request, "The password is valid, but the account has been disabled!")
-    else:
-        # the authentication system was unable to verify the username and password
-        messages.error(request, "The username and password were incorrect.")
-    return render(request, 'login.html')
+class SitesListView(APIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, format=None):
+        content = {
+            'user': unicode(request.user),  # `django.contrib.auth.User` instance.
+            'auth': unicode(request.auth),  # None
+        }
+        sites = {"sites": [{"index": site.index,
+                            "enabled": site.enabled,
+                            "description": site.description,
+                            "visible": site.location,
+                            "type": site.type,
+                            "users": [user.id for user in site.users.all()]
+                            } for site in Site.objects.filter(users__in=[self.request.user.id])
+                           ]}
+
+        return Response(sites)
 
 
-def index(request):
-    return render(request, 'index.html')
+class SiteDetailView(APIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, site_id):
+        site = Site.objects.filter(users__in=[self.request.user.id], pk=site_id).first()
+        return Response(site.to_dict()) if site else Response({}, status=status.HTTP_404_NOT_FOUND)
+
+
+class SensorsListView(APIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, site_id):
+        sensors = Sensor.objects.filter(site__id=site_id, site__users__in=[self.request.user.id])
+        return Response({"sensors": [sensor.to_dict() for sensor in sensors]})
+
+
+class SensorDetailView(APIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, site_id, sensor_id):
+        sensor = Sensor.objects.filter(site__id=site_id, site__users__in=[self.request.user.id], pk=sensor_id).first()
+        return Response(sensor.to_dict()) if sensor else Response({}, status=status.HTTP_404_NOT_FOUND)
+
+
+class CameraListView(APIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, site_id):
+        return Response({"cameras": [camera.to_dict() for camera in Camera.objects.filter(site__id=site_id)]})
+
+
+class CameraDetailView(APIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, site_id, camera_id):
+        camera = Camera.objects.filter(site__id=site_id).filter(site__users__in=[self.request.user.id]).filter(pk=camera_id).first()
+        return Response(camera.to_dict()) if camera else Response({}, status=status.HTTP_404_NOT_FOUND)
+
+
+class AlarmZonesListView(APIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, site_id):
+        return Response({"alarm_zones":
+                        [alarm_zone.to_dict() for alarm_zone in AlarmZone.objects.filter(site__id=site_id)]})
+
+
+class AlarmZoneDetailView(APIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, site_id, alarm_zone_id):
+        alarm_zone = AlarmZone.objects.filter(site__id=site_id).filter(site__users__in=[self.request.user.id]).filter(pk=alarm_zone_id).first()
+        return Response(alarm_zone.to_dict()) if alarm_zone else Response({}, status=status.HTTP_404_NOT_FOUND)
+
+
+# from django.contrib.auth import authenticate, logout, login
+# from django.contrib import messages
+# from django.views.generic import View, ListView
+# from django.shortcuts import render, redirect, reverse
+#
+# from .models import Site
+#
+#
+# class LoginView(View):
+#     template = 'login.html'
+#
+#     def get(self, request):
+#         return render(request, self.template)
+#
+#     def post(self, request):
+#         user = authenticate(username=request.POST.get("username"),
+#                             password=request.POST.get("password"))
+#         login(request, user)
+#         if user is not None:
+#             # the password verified for the user
+#             if user.is_active:
+#                 messages.info(request, "User is valid, active and authenticated")
+#                 return redirect(reverse('sites'))
+#             else:
+#                 messages.error(request, "The password is valid, but the account has been disabled!")
+#         else:
+#             # the authentication system was unable to verify the username and password
+#             messages.error(request, "The username and password were incorrect.")
+#         return render(request, 'login.html')
+#
+#
+# class LogoutView(View):
+#     def get(self, request):
+#         logout(request)
+#         return redirect(reverse('login'))
+#
+#
+# class SiteListView(ListView):
+#     model = Site
+#
+#     def get_context_data(self, **kwargs):
+#         context = super(SiteListView, self).get_context_data(**kwargs)
+#         context['sites'] = [site for site in Site.objects.filter(users__in=[self.request.user.id])]
+#         return context
