@@ -54,6 +54,8 @@ urlpatterns = [
     url(r'^sites/(?P<site_id>\d+)/alarm_zones/$', views.AlarmZonesListView.as_view(), name='alarm_zones_list'),
     url(r'^sites/(?P<site_id>\d+)/alarm_zones/(?P<alarm_zone_id>\d+)/$', views.AlarmZoneDetailView.as_view(),
         name='alarm_zone_detail'),
+    url(r'^(?:alarm_zones|cameras|sensors|alarm_logs|sites|lights|light_groups)/(?P<object_id>\d+)/enable/$',
+        views.ObjectEnableView.as_view(), name='enable_object'),
 
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^admin/', admin.site.urls),

@@ -90,47 +90,10 @@ class AlarmZoneDetailView(APIView):
         return Response(alarm_zone.to_dict()) if alarm_zone else Response({}, status=status.HTTP_404_NOT_FOUND)
 
 
-# from django.contrib.auth import authenticate, logout, login
-# from django.contrib import messages
-# from django.views.generic import View, ListView
-# from django.shortcuts import render, redirect, reverse
-#
-# from .models import Site
-#
-#
-# class LoginView(View):
-#     template = 'login.html'
-#
-#     def get(self, request):
-#         return render(request, self.template)
-#
-#     def post(self, request):
-#         user = authenticate(username=request.POST.get("username"),
-#                             password=request.POST.get("password"))
-#         login(request, user)
-#         if user is not None:
-#             # the password verified for the user
-#             if user.is_active:
-#                 messages.info(request, "User is valid, active and authenticated")
-#                 return redirect(reverse('sites'))
-#             else:
-#                 messages.error(request, "The password is valid, but the account has been disabled!")
-#         else:
-#             # the authentication system was unable to verify the username and password
-#             messages.error(request, "The username and password were incorrect.")
-#         return render(request, 'login.html')
-#
-#
-# class LogoutView(View):
-#     def get(self, request):
-#         logout(request)
-#         return redirect(reverse('login'))
-#
-#
-# class SiteListView(ListView):
-#     model = Site
-#
-#     def get_context_data(self, **kwargs):
-#         context = super(SiteListView, self).get_context_data(**kwargs)
-#         context['sites'] = [site for site in Site.objects.filter(users__in=[self.request.user.id])]
-#         return context
+class ObjectEnableView(APIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, object_id):
+        # BaseModelList = alarm_zones|cameras|sensors|alarm_logs|sites|lights|light_groups
+        return
