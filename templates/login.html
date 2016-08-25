@@ -17,7 +17,7 @@
 			 	</div>
 			  	<div class="panel-body">
 			    	<form accept-charset="UTF-8" role="form" action="{% url 'login' %}" method="POST">
-                        {% csrf_token %}
+{#                        {% csrf_token %}#}
                     <fieldset>
 			    	  	<div class="form-group">
 			    		    <input class="form-control" placeholder="Username" name="username" type="text">
@@ -26,11 +26,11 @@
 			    			<input class="form-control" placeholder="Password" name="password" type="password" value="">
 			    		</div>
 			    		<input class="btn btn-lg btn-success btn-block" type="submit" value="Login">
-                        {% if messages %}
+{#                        {% if messages %}#}
                             <ul class="messages">
-                                {% for message in messages %}
-                                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                                {% endfor %}
+{#                                {% for message in messages %}#}
+{#                                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>#}
+{#                                {% endfor %}#}
                             </ul>
 			    	</fieldset>
 			      	</form>
@@ -39,6 +39,8 @@
 		</div>
 	</div>
 </div>
-{% endif %}
+{#{% endif %}#}
 </body>
+<script type="text/javascript" src="{% static 'bower_components/angular/angular.js' %}"></script>
+<script type="text/javascript" src="{% static 'bower_components/jquery/dist/jquery.min.js' %}"></script>
 </html>

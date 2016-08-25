@@ -69,10 +69,6 @@ class AlarmZone(BaseModel):
     cameras = models.ManyToManyField(Camera, related_name='alarm_zones')
 
     def to_dict(self):
-        """
-        Convert object to dictonary where keys are names of attributes
-            and values are values of attributes
-        """
         result = dict((key, value) for key, value in self.__dict__.iteritems()
                       if not callable(value)
                       and not key.startswith('__')
@@ -93,10 +89,6 @@ class Sensor(BaseModel):
     site = models.ForeignKey(Site)  # The site the alarmzone belongs to.
 
     def to_dict(self):
-        """
-        Convert object to dictonary where keys are names of attributes
-            and values are values of attributes
-        """
         result = dict((key, value) for key, value in self.__dict__.iteritems()
                       if not callable(value)
                       and not key.startswith('__')
@@ -184,3 +176,9 @@ class CameraImage(models.Model):
 
     def __unicode__(self):
         return settings.MEDIA_URL + self.image_data.name
+
+    def to_dict(self):
+        return dict((key, value) for key, value in self.__dict__.iteritems()
+                    if not callable(value)
+                    and not key.startswith('__')
+                    and not key.startswith('_s'))
