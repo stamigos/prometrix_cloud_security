@@ -94,6 +94,37 @@ class ObjectEnableView(APIView):
     authentication_classes = (SessionAuthentication, BasicAuthentication)
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request, object_id):
-        # BaseModelList = alarm_zones|cameras|sensors|alarm_logs|sites|lights|light_groups
-        return
+    def get(self, request, site_id, objects, object_id):
+        model_class = self._verify_model(objects)
+        if not model_class:
+            return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+        _object = model_class.objects.filter(id=object_id).first()
+        if _object:
+            _object.enable()
+            return Response({_object.__class__.__name__: {"id": _object.id, "enabled": _object.enabled}})
+        return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+    def _verify_model(self, objects):
+        base_models = {"alarm_zones": AlarmZone, "cameras": Camera, "sensors": Sensor, "sites": Site}
+        return base_models.get(objects)
+
+
+class ObjectDisableView(APIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, site_id, objects, object_id):
+        model_class = self._verify_model(objects)
+        if not model_class:
+            return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+        _object = model_class.objects.filter(id=object_id).first()
+        if _object:
+            _object.disable()
+            return Response({_object.__class__.__name__: {"id": _object.id, "enabled": _object.enabled}})
+        return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+    def _verify_model(self, objects):
+        base_models = {"alarm_zones": AlarmZone, "cameras": Camera, "sensors": Sensor, "sites": Site}
+        return base_models.get(objects)

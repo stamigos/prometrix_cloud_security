@@ -16,9 +16,10 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 from django.contrib.auth.models import User
-from django.contrib.auth.decorators import login_required
+from django.conf.urls.static import static
 
 from . import views
+import settings
 
 from rest_framework import routers, serializers, viewsets
 
@@ -54,9 +55,10 @@ urlpatterns = [
     url(r'^sites/(?P<site_id>\d+)/alarm_zones/$', views.AlarmZonesListView.as_view(), name='alarm_zones_list'),
     url(r'^sites/(?P<site_id>\d+)/alarm_zones/(?P<alarm_zone_id>\d+)/$', views.AlarmZoneDetailView.as_view(),
         name='alarm_zone_detail'),
-    url(r'^(?:alarm_zones|cameras|sensors|alarm_logs|sites|lights|light_groups)/(?P<object_id>\d+)/enable/$',
+    url(r'^sites/(?P<site_id>\d+)/(?P<objects>.*)/(?P<object_id>\d+)/enable/$',
         views.ObjectEnableView.as_view(), name='enable_object'),
-
+    url(r'^sites/(?P<site_id>\d+)/(?P<objects>.*)/(?P<object_id>\d+)/disable/$',
+        views.ObjectDisableView.as_view(), name='disable_object'),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^admin/', admin.site.urls),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

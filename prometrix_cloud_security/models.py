@@ -1,5 +1,17 @@
+from datetime import datetime
+import urlparse
+
+import StringIO
+
+import requests
+from PIL import Image as PImage
+
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.files.base import ContentFile
+
+import utils
+import settings
 
 
 class BaseModel(models.Model):
@@ -45,6 +57,7 @@ class Camera(BaseModel):
     password = models.CharField(max_length=255)  # IP camera password
     public_ip = models.CharField(max_length=255)  # IP to access the camera "online"
     site = models.ForeignKey(Site)  # The alarmzone a sensor can trigger
+    image_url = models.CharField(max_length=255, default='http://185.70.145.75/jpg/image.jpg')
     # save_schedule =
 
 
@@ -115,3 +128,59 @@ class LightGroup(BaseModel):
     status = models.BooleanField()  # is the lightgroup currently switched on/off ?
     light_intensity = models.IntegerField()  # lightgrup intensity between 0-100%
     site = models.ForeignKey(Site)  # The site it belongs to
+
+
+class CameraImage(models.Model):
+    # IMAGE_PATH = settings.MEDIA_ROOT + '/cam/pictures'
+    # IMAGE_THUMB_PATH = settings.MEDIA_ROOT + '/cam/pictures'
+
+    camera = models.ForeignKey(Camera)
+    image_data = models.ImageField(upload_to=utils.gen_save_path, blank=True)
+    image_data_thumb = models.ImageField(upload_to=utils.gen_save_path_thumb, blank=True)
+    site = models.ForeignKey(Site)
+    logged = models.DateTimeField(auto_now_add=True)
+    meta = models.CharField(max_length=400, blank=True)
+
+    def save(self, *args, **kwargs):
+        parsed_url = urlparse.urlparse(self.camera.image_url)
+        if parsed_url.username and parsed_url.password:
+            r = requests.get(self.camera.image_url,
+                             auth=(parsed_url.username, parsed_url.password))
+        else:
+            r = requests.get(self.camera.image_url)
+
+        filename = "temp.jpg"
+
+        self.image_data.save(
+            filename,
+            ContentFile(r.content),
+            save=False
+        )
+        self.create_thumb(self.image_data.path)
+
+        super(CameraImage, self).save(*args, **kwargs)
+
+    def create_thumb(self, image_path):
+        filename = image_path
+        im = PImage.open(image_path)
+        im.thumbnail((150, 150), PImage.ANTIALIAS)
+        temp_handle = StringIO.StringIO()
+        im.save(temp_handle, 'jpeg')
+        temp_handle.seek(0)
+
+        self.image_data_thumb.save(
+            filename,
+            ContentFile(temp_handle.read()),
+            save=False
+        )
+
+    def delete(self, *args, **kwargs):
+        print "delete file"
+        storage_image, path = self.image_data.storage, self.image_data.path
+        storage_thumb, path = self.image_data_thumb.storage, self.image_data_thumb.path
+        super(CameraImage, self).delete(*args, **kwargs)
+        storage_image.delete(path)
+        storage_thumb.delete(path)
+
+    def __unicode__(self):
+        return settings.MEDIA_URL + self.image_data.name
