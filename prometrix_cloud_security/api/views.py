@@ -148,3 +148,17 @@ class ObjectDisableView(APIView):
     def _verify_model(self, objects):
         base_models = {"alarm_zones": AlarmZone, "cameras": Camera, "sensors": Sensor, "sites": Site}
         return base_models.get(objects)
+
+
+class ActivateAlarmZoneView(APIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, site_id, alarm_zone_id):
+        alarm_zone = AlarmZone.objects.filter(site__id=self.kwargs['site_id'],
+                                              site__users__in=[request.user.id],
+                                              id=alarm_zone_id).first()
+        if alarm_zone:
+            alarm_zone.enable()
+
+        return Response(alarm_zone)

@@ -148,3 +148,10 @@ REST_FRAMEWORK = {
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
+try:
+    from production import *
+except ImportError as e:
+    pass
+
+
+

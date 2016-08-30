@@ -11,7 +11,7 @@ from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 
 import utils
-import settings
+from settings import settings
 
 
 class BaseModel(models.Model):

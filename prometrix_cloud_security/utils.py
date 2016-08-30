@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-import settings
+from settings import settings
 
 
 def ensure_dir(f):
