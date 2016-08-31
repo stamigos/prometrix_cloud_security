@@ -130,7 +130,9 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
-    os.path.join(BASE_DIR, "client")
+    os.path.join(BASE_DIR, "client"),
+    os.path.join(BASE_DIR, "assets"),
+    os.path.join(PROJECT_ROOT, "assets")
 ]
 
 LOGOUT_REDIRECT_URL = '/login'
