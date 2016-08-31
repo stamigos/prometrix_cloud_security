@@ -151,7 +151,7 @@ MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'media')
 MEDIA_URL = '/media/'
 
 try:
-    from settings.production import *
+    from production import *
 except ImportError as e:
     pass
 
