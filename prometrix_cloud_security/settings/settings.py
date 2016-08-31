@@ -129,8 +129,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
-    os.path.join(PROJECT_ROOT, "static"),
-    os.path.join(PROJECT_ROOT, "client")
+    os.path.join(BASE_DIR, "static"),
+    os.path.join(BASE_DIR, "client")
 ]
 
 LOGOUT_REDIRECT_URL = '/login'
