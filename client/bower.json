@@ -1,0 +1,21 @@
+{
+  "name": "client",
+  "homepage": "https://github.com/stamigos/prometrix_cloud_security",
+  "authors": [
+    "stamigos <oldtigersvoice@gmail.com>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "^1.5.8",
+    "jquery": "^3.1.0"
+  }
+}
