@@ -119,7 +119,9 @@ class ObjectEnableView(APIView):
         if not model_class:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
 
-        _object = model_class.objects.filter(id=object_id).first()
+        _object = model_class.objects.filter(site__id=site_id,
+                                             site__users__in=[request.user.id],
+                                             id=object_id).first()
         if _object:
             _object.enable()
             return Response({_object.__class__.__name__: {"id": _object.id, "enabled": _object.enabled}})
@@ -139,7 +141,9 @@ class ObjectDisableView(APIView):
         if not model_class:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
 
-        _object = model_class.objects.filter(id=object_id).first()
+        _object = model_class.objects.filter(site__id=site_id,
+                                             site__users__in=[request.user.id],
+                                             id=object_id).first()
         if _object:
             _object.disable()
             return Response({_object.__class__.__name__: {"id": _object.id, "enabled": _object.enabled}})
@@ -150,15 +154,3 @@ class ObjectDisableView(APIView):
         return base_models.get(objects)
 
 
-class ActivateAlarmZoneView(APIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
-    permission_classes = (IsAuthenticated,)
-
-    def get(self, request, site_id, alarm_zone_id):
-        alarm_zone = AlarmZone.objects.filter(site__id=self.kwargs['site_id'],
-                                              site__users__in=[request.user.id],
-                                              id=alarm_zone_id).first()
-        if alarm_zone:
-            alarm_zone.enable()
-
-        return Response(alarm_zone)

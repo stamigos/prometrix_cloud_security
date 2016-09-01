@@ -39,12 +39,14 @@ class BaseModel(models.Model):
                     and not key.startswith('_s'))
 
     def enable(self):
-        self.enabled = True
-        self.save()
+        if not self.enabled:
+            self.enabled = True
+            self.save()
 
     def disable(self):
-        self.enabled = False
-        self.save()
+        if self.enabled:
+            self.enabled = False
+            self.save()
 
 
 class Site(BaseModel):
@@ -82,7 +84,7 @@ class AlarmZone(BaseModel):
 
     def enable(self):
         job = cronex.CronExpression(str(self.enabledSchedule))
-        if job.check_trigger(time.gmtime(time.time())[:5]):
+        if job.check_trigger(time.gmtime(time.time())[:5]) and (not self.enabled):
             self.enabled = True
             self.save()
 
