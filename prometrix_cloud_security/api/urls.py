@@ -40,8 +40,6 @@ urlpatterns = [
         views.ObjectEnableView.as_view(), name='enable_object'),
     url(r'^sites/(?P<site_id>\d+)/(?P<objects>.*)/(?P<object_id>\d+)/disable/$',
         views.ObjectDisableView.as_view(), name='disable_object'),
-    url(r'^sites/(?P<site_id>\d+)/alarm_zones/(?P<object_id>\d+)/activate/$', views.ActivateAlarmZoneView,
-        name='activate_alarm_zone'),
     url(r'^sites/(?P<site_id>\d+)/cameras/(?P<camera_id>\d+)/images/$', views.CameraImagesList.as_view(),
         name='camera_images_list'),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),

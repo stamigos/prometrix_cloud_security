@@ -1,10 +1,13 @@
+import time
 from datetime import datetime
 import urlparse
 
 import StringIO
 
+import cronex
 import requests
 from PIL import Image as PImage
+
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -63,7 +66,7 @@ class Camera(BaseModel):
 
 class AlarmZone(BaseModel):
     last_alarm = models.DateTimeField()  # Last time the alarmzone was in alarm
-    # enabledSchedule =
+    enabledSchedule = models.CharField(max_length=150, default='* * * * *')
     priority = models.IntegerField()  # Different alarmzones can have different priorities
     site = models.ForeignKey(Site)  # The site the alarmzone belongs to.
     cameras = models.ManyToManyField(Camera, related_name='alarm_zones')
@@ -76,6 +79,12 @@ class AlarmZone(BaseModel):
         result.update({"sensors": [snr.id for snr in self.sensors.all()]})
         result.update({"cameras": [snr.id for snr in self.cameras.all()]})
         return result
+
+    def enable(self):
+        job = cronex.CronExpression(str(self.enabledSchedule))
+        if job.check_trigger(time.gmtime(time.time())[:5]):
+            self.enabled = True
+            self.save()
 
 
 class Sensor(BaseModel):
