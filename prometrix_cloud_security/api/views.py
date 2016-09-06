@@ -185,7 +185,7 @@ class DeactivateAlarmZoneView(APIView):
             threaded_queue = ThreadedQueue(concurrent=100)
             deactivated_actions = json.loads(alarm_zone.deactivated_actions) if alarm_zone.deactivated_actions else []
             result = threaded_queue.run(deactivated_actions)
-            return Response({"id": alarm_zone.id, "activated": True, "result": result})
-        return Response({"id": alarm_zone.id, "activated": False, "result": {}})
+            return Response({"id": alarm_zone.id, "deactivated": True, "result": result})
+        return Response({"id": alarm_zone.id, "deactivated": False, "result": {}})
 
 
