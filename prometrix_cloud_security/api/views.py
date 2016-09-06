@@ -170,7 +170,7 @@ class ActivateAlarmZoneView(APIView):
             activated_actions = json.loads(alarm_zone.activated_actions) if alarm_zone.activated_actions else []
             result = threaded_queue.run(activated_actions)
             return Response({"id": alarm_zone.id, "activated": True, "result": result})
-        return Response({"id": alarm_zone.id, "activated": False, "result": None})
+        return Response({"id": alarm_zone.id, "activated": False, "result": {}})
 
 
 class DeactivateAlarmZoneView(APIView):
@@ -186,6 +186,6 @@ class DeactivateAlarmZoneView(APIView):
             deactivated_actions = json.loads(alarm_zone.deactivated_actions) if alarm_zone.deactivated_actions else []
             result = threaded_queue.run(deactivated_actions)
             return Response({"id": alarm_zone.id, "activated": True, "result": result})
-        return Response({"id": alarm_zone.id, "activated": False, "result": None})
+        return Response({"id": alarm_zone.id, "activated": False, "result": {}})
 
 
