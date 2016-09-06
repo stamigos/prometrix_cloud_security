@@ -72,6 +72,8 @@ class AlarmZone(BaseModel):
     priority = models.IntegerField()  # Different alarmzones can have different priorities
     site = models.ForeignKey(Site)  # The site the alarmzone belongs to.
     cameras = models.ManyToManyField(Camera, related_name='alarm_zones')
+    activated_actions = models.TextField(blank=True)  #  a list of custom URLs that will be requested when the alarmzone activated API command is triggered
+    deactivated_actions = models.TextField(blank=True) #  a list of custom URLs that will be requested when the alarmzone deactivated API command is triggered
 
     def to_dict(self):
         result = dict((key, value) for key, value in self.__dict__.iteritems()
@@ -87,6 +89,10 @@ class AlarmZone(BaseModel):
         if job.check_trigger(time.gmtime(time.time())[:5]) and (not self.enabled):
             self.enabled = True
             self.save()
+
+    def __unicode__(self):
+        return str('{description} - {status}'.format(description=self.description,
+                                                     status="Activated" if self.enabled else "Deactivated"))
 
 
 class Sensor(BaseModel):

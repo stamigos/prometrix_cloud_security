@@ -1,3 +1,5 @@
+import json
+
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -7,6 +9,7 @@ from rest_framework import status, generics
 from prometrix_cloud_security.models import Site, Sensor, Camera, AlarmZone, CameraImage
 from .serializers import SiteSerializer, SensorSerializer, CameraSerializer,\
     AlarmZoneSerializer, CameraImageSerializer
+from prometrix_cloud_security.utils import ThreadedQueue
 
 
 class SitesListView(generics.ListAPIView):
@@ -152,5 +155,37 @@ class ObjectDisableView(APIView):
     def _verify_model(self, objects):
         base_models = {"alarm_zones": AlarmZone, "cameras": Camera, "sensors": Sensor, "sites": Site}
         return base_models.get(objects)
+
+
+class ActivateAlarmZoneView(APIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, site_id, alarm_zone_id):
+        alarm_zone = AlarmZone.objects.filter(site__id=site_id,
+                                              site__users__in=[request.user.id],
+                                              id=alarm_zone_id).first()
+        if alarm_zone.enabled:
+            threaded_queue = ThreadedQueue(concurrent=100)
+            activated_actions = json.loads(alarm_zone.activated_actions) if alarm_zone.activated_actions else []
+            result = threaded_queue.run(activated_actions)
+            return Response({"id": alarm_zone.id, "activated": True, "result": result})
+        return Response({"id": alarm_zone.id, "activated": False, "result": None})
+
+
+class DeactivateAlarmZoneView(APIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, site_id, alarm_zone_id):
+        alarm_zone = AlarmZone.objects.filter(site__id=site_id,
+                                              site__users__in=[request.user.id],
+                                              id=alarm_zone_id).first()
+        if not alarm_zone.enabled:
+            threaded_queue = ThreadedQueue(concurrent=100)
+            deactivated_actions = json.loads(alarm_zone.deactivated_actions) if alarm_zone.deactivated_actions else []
+            result = threaded_queue.run(deactivated_actions)
+            return Response({"id": alarm_zone.id, "activated": True, "result": result})
+        return Response({"id": alarm_zone.id, "activated": False, "result": None})
 
 
