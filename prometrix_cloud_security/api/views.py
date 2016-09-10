@@ -1,15 +1,24 @@
-import json
-
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status, generics
+from rest_framework.exceptions import APIException
 
-from prometrix_cloud_security.models import Site, Sensor, Camera, AlarmZone, CameraImage
+from django.shortcuts import get_object_or_404, get_list_or_404
+
+from prometrix_cloud_security.models import Site, Sensor, Camera, AlarmZone, CameraImage, AlarmLog
 from .serializers import SiteSerializer, SensorSerializer, CameraSerializer,\
-    AlarmZoneSerializer, CameraImageSerializer
-from prometrix_cloud_security.utils import ThreadedQueue
+    AlarmZoneSerializer, CameraImageSerializer, serializer_classes
+from prometrix_cloud_security.utils import ThreadedQueue, to_list
+
+
+def verify_model(objects):
+    base_models = dict(alarm_zones=AlarmZone, cameras=Camera, sensors=Sensor, sites=Site)
+    try:
+        return base_models[objects]
+    except KeyError:
+        raise APIException("Not found")
 
 
 class SitesListView(generics.ListAPIView):
@@ -18,7 +27,7 @@ class SitesListView(generics.ListAPIView):
     serializer_class = SiteSerializer
 
     def get_queryset(self):
-        return Site.objects.filter(users__in=[self.request.user.id])
+        return get_list_or_404(Site.objects.filter(users__in=[self.request.user.id]))
 
 
 class SiteDetailView(generics.RetrieveAPIView):
@@ -30,75 +39,6 @@ class SiteDetailView(generics.RetrieveAPIView):
         instance = Site.objects.filter(users__in=[self.request.user.id],
                                        pk=kwargs['site_id']).first()
         serializer = self.get_serializer(instance)
-        return Response(serializer.data)  # if instance else Response({}, status=status.HTTP_404_NOT_FOUND)
-
-
-class SensorsListView(generics.ListAPIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
-    permission_classes = (IsAuthenticated,)
-    serializer_class = SensorSerializer
-
-    def get_queryset(self):
-        return Sensor.objects.filter(site__id=self.kwargs['site_id'],
-                                     site__users__in=[self.request.user.id])
-
-
-class SensorDetailView(generics.RetrieveAPIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
-    permission_classes = (IsAuthenticated,)
-    serializer_class = SensorSerializer
-
-    def retrieve(self, request, *args, **kwargs):
-        instance = Sensor.objects.filter(site__id=kwargs['site_id'],
-                                         site__users__in=[request.user.id],
-                                         pk=kwargs['sensor_id']).first()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)  # if instance else Response({}, status=status.HTTP_404_NOT_FOUND)
-
-
-class CameraListView(generics.ListAPIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
-    permission_classes = (IsAuthenticated,)
-    serializer_class = CameraSerializer
-
-    def get_queryset(self):
-        return Camera.objects.filter(site__id=self.kwargs['site_id'],
-                                     site__users__in=[self.request.user.id])
-
-
-class CameraDetailView(generics.RetrieveAPIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
-    permission_classes = (IsAuthenticated,)
-    serializer_class = CameraSerializer
-
-    def retrieve(self, request, *args, **kwargs):
-        instance = Camera.objects.filter(site__id=kwargs['site_id'],
-                                         site__users__in=[request.user.id],
-                                         pk=kwargs['camera_id']).first()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)  # if camera else Response({}, status=status.HTTP_404_NOT_FOUND)
-
-
-class AlarmZonesListView(generics.ListAPIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
-    permission_classes = (IsAuthenticated,)
-    serializer_class = AlarmZoneSerializer
-
-    def get_queryset(self):
-        return AlarmZone.objects.filter(site__id=self.kwargs['site_id'],
-                                        site__users__in=[self.request.user.id])
-
-
-class AlarmZoneDetailView(generics.RetrieveAPIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
-    permission_classes = (IsAuthenticated,)
-    serializer_class = AlarmZoneSerializer
-
-    def retrieve(self, request, *args, **kwargs):
-        instance = AlarmZone.objects.filter(site__id=kwargs['site_id'],
-                                            site__users__in=[request.user.id],
-                                            pk=kwargs['alarm_zone_id']).first()
-        serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
 
@@ -108,84 +48,101 @@ class CameraImagesList(generics.ListAPIView):
     serializer_class = CameraImageSerializer
 
     def get_queryset(self):
-        return CameraImage.objects.filter(site__id=self.kwargs['site_id'],
-                                          site__users__in=[self.request.user.id],
-                                          camera__id=self.kwargs['camera_id'])
+        return get_list_or_404(CameraImage.filter_camera_images(self.request, self.kwargs))
 
 
-class ObjectEnableView(APIView):
+class SiteObjectsListView(generics.ListAPIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        model_class = verify_model(self.kwargs['objects'])
+        return get_list_or_404(model_class.filter_user_site(self.request, self.kwargs))
+
+    def get_serializer_class(self, *args, **kwargs):
+        serializer_class = serializer_classes[self.kwargs['objects']]
+        return serializer_class
+
+
+class SiteObjectDetailView(generics.RetrieveAPIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    permission_classes = (IsAuthenticated,)
+
+    def retrieve(self, request, *args, **kwargs):
+        model_class = verify_model(kwargs['objects'])
+        query = model_class.filter_user_site(request, kwargs)
+        instance = get_object_or_404(query, pk=kwargs['object_id'])
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    def get_serializer_class(self, *args, **kwargs):
+        serializer_class = serializer_classes[self.kwargs['objects']]
+        return serializer_class
+
+
+class SiteObjectEnableView(APIView):
     authentication_classes = (SessionAuthentication, BasicAuthentication)
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, site_id, objects, object_id):
-        model_class = self._verify_model(objects)
-        if not model_class:
-            return Response({}, status=status.HTTP_404_NOT_FOUND)
-
-        _object = model_class.objects.filter(site__id=site_id,
-                                             site__users__in=[request.user.id],
-                                             id=object_id).first()
-        if _object:
-            _object.enable()
-            return Response({_object.__class__.__name__: {"id": _object.id, "enabled": _object.enabled}})
-        return Response({}, status=status.HTTP_404_NOT_FOUND)
-
-    def _verify_model(self, objects):
-        base_models = {"alarm_zones": AlarmZone, "cameras": Camera, "sensors": Sensor, "sites": Site}
-        return base_models.get(objects)
+        model_class = verify_model(objects)
+        query = model_class.filter_user_site(request, self.kwargs)
+        _object = get_object_or_404(query, id=object_id)
+        _object.enable()
+        return Response({_object.__class__.__name__: dict(id=_object.id, enabled=_object.enabled)})
 
 
-class ObjectDisableView(APIView):
+class SiteObjectDisableView(APIView):
     authentication_classes = (SessionAuthentication, BasicAuthentication)
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, site_id, objects, object_id):
-        model_class = self._verify_model(objects)
-        if not model_class:
-            return Response({}, status=status.HTTP_404_NOT_FOUND)
+        model_class = verify_model(objects)
 
-        _object = model_class.objects.filter(site__id=site_id,
-                                             site__users__in=[request.user.id],
-                                             id=object_id).first()
-        if _object:
-            _object.disable()
-            return Response({_object.__class__.__name__: {"id": _object.id, "enabled": _object.enabled}})
-        return Response({}, status=status.HTTP_404_NOT_FOUND)
-
-    def _verify_model(self, objects):
-        base_models = {"alarm_zones": AlarmZone, "cameras": Camera, "sensors": Sensor, "sites": Site}
-        return base_models.get(objects)
+        query = model_class.filter_user_site(request, self.kwargs)
+        _object = get_object_or_404(query, id=object_id)
+        _object.disable()
+        return Response({_object.__class__.__name__: dict(id=_object.id, enabled=_object.enabled)})
 
 
-class ActivateAlarmZoneView(APIView):
+class AlarmZoneActivateView(APIView):
     authentication_classes = (SessionAuthentication, BasicAuthentication)
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, site_id, alarm_zone_id):
-        alarm_zone = AlarmZone.objects.filter(site__id=site_id,
-                                              site__users__in=[request.user.id],
-                                              id=alarm_zone_id).first()
-        if alarm_zone.enabled:
-            threaded_queue = ThreadedQueue(concurrent=100)
-            activated_actions = json.loads(alarm_zone.activated_actions) if alarm_zone.activated_actions else []
-            result = threaded_queue.run(activated_actions)
-            return Response({"id": alarm_zone.id, "activated": True, "result": result})
-        return Response({"id": alarm_zone.id, "activated": False, "result": {}})
+        query = AlarmZone.filter_user_site(request, self.kwargs)
+        alarm_zone = get_object_or_404(query, id=alarm_zone_id)
+        activated_actions, alarm_log = alarm_zone.activate(self.request, self.kwargs)
+        if activated_actions and alarm_log:
+            return Response(dict(id=alarm_zone.id,
+                                 activated=True,
+                                 result=dict(
+                                     activated_actions=activated_actions,
+                                     alarm_log=alarm_log.serialize_to_dict()
+                                            )
+                                 )
+                            )
+        return Response(dict(id=alarm_zone.id, activated=False, result={}))
 
 
-class DeactivateAlarmZoneView(APIView):
+class AlarmZoneDeactivateView(APIView):
     authentication_classes = (SessionAuthentication, BasicAuthentication)
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, site_id, alarm_zone_id):
-        alarm_zone = AlarmZone.objects.filter(site__id=site_id,
-                                              site__users__in=[request.user.id],
-                                              id=alarm_zone_id).first()
-        if not alarm_zone.enabled:
-            threaded_queue = ThreadedQueue(concurrent=100)
-            deactivated_actions = json.loads(alarm_zone.deactivated_actions) if alarm_zone.deactivated_actions else []
-            result = threaded_queue.run(deactivated_actions)
-            return Response({"id": alarm_zone.id, "deactivated": True, "result": result})
-        return Response({"id": alarm_zone.id, "deactivated": False, "result": {}})
+        query = AlarmZone.filter_user_site(request, self.kwargs)
+        alarm_zone = get_object_or_404(query, id=alarm_zone_id)
+        deactivated_actions, alarm_log = alarm_zone.deactivate(self.request, self.kwargs)
+        print deactivated_actions, alarm_log
+        if deactivated_actions and alarm_log:
+            return Response(dict(id=alarm_zone.id,
+                                 deactivated=True,
+                                 result=dict(
+                                     deactivated_actions=deactivated_actions,
+                                     alarm_log=alarm_log.serialize_to_dict()
+                                            )
+                                 )
+                            )
+        return Response(dict(id=alarm_zone.id, deactivated=False, result={}))
 
 

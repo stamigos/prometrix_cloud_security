@@ -27,3 +27,7 @@ class CameraImageSerializer(serializers.ModelSerializer):
         model = CameraImage
 
 
+serializer_classes = dict(sites=SiteSerializer, sensors=SensorSerializer, cameras=CameraSerializer,
+                          alarm_zones=AlarmZoneSerializer, camera_images=CameraImageSerializer)
+
+

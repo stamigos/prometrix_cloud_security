@@ -1,9 +1,7 @@
 import os
-# import sys
+import json
 from datetime import datetime
-# from urlparse import urlparse
 from threading import Thread
-# import httplib
 from Queue import Queue
 
 import requests
@@ -29,7 +27,17 @@ def gen_save_path_thumb(instance, filename):
     return '{path}/{fname}.{extension}'.format(path=path, fname="150x150_"+dt_now, extension='jpg')
 
 
+def to_list(str_list):
+    """
+        Converts string '[item1, item2]' to list [item1, item2]
+    """
+    return json.loads(str_list) if str_list else []
+
+
 class ThreadedQueue(object):
+    """
+        Class for running queues tasks in separated threads
+    """
     def __init__(self, concurrent=None):
         self.concurrent = concurrent or 200
         self.queue = Queue(concurrent * 2)
@@ -40,7 +48,6 @@ class ThreadedQueue(object):
             url = self.queue.get()
             status, url = self.get_status(url)
             self.result.update({url: status})
-            # self.do_something_with_result(status, url)
             self.queue.task_done()
 
     def get_status(self, ourl):
@@ -50,19 +57,15 @@ class ThreadedQueue(object):
         except requests.exceptions.RequestException as e:
             return e, ourl
 
-    # def do_something_with_result(self, status, url):
-    #     print status, url
-
     def run(self, urls_list):
         for i in range(self.concurrent):
             t = Thread(target=self.do_work)
             t.daemon = True
             t.start()
-        # try:
+
         for url in urls_list:
             self.queue.put(url.strip())
         self.queue.join()
 
         return self.result
-        # except KeyboardInterrupt:
-        #     sys.exit(1)
+
