@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.contrib.auth.models import User
 from django.conf.urls.static import static
 
+
 import views
 
 from rest_framework import routers, serializers, viewsets
@@ -40,5 +41,7 @@ urlpatterns = [
     url(r'^sites/(?P<site_id>\d+)/(?P<objects>.*)/(?P<object_id>\d+)/$', views.SiteObjectDetailView.as_view(),
         name='object_detail_view'),
     url(r'^sites/(?P<site_id>\d+)/(?P<objects>.*)/$', views.SiteObjectsListView.as_view(), name='objects_list'),
+    url(r'^rest-auth/', include('rest_auth.urls')),
+    url(r'^rest-auth/registration/', include('rest_auth.registration.urls')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
