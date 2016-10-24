@@ -1,4 +1,4 @@
-from rest_framework.authentication import BasicAuthentication, SessionAuthentication
+from rest_framework.authentication import BasicAuthentication, SessionAuthentication, TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,7 +14,7 @@ from prometrix_cloud_security.utils import ThreadedQueue, to_list
 
 
 def verify_model(objects):
-    base_models = dict(alarm_zones=AlarmZone, cameras=Camera, sensors=Sensor, sites=Site)
+    base_models = dict(alarm_zones=AlarmZone, cameras=Camera, sensors=Sensor, sites=Site, alarm_logs=AlarmLog)
     try:
         return base_models[objects]
     except KeyError:
@@ -22,7 +22,7 @@ def verify_model(objects):
 
 
 class SitesListView(generics.ListAPIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (SessionAuthentication, BasicAuthentication, TokenAuthentication)
     permission_classes = (IsAuthenticated,)
     serializer_class = SiteSerializer
 
@@ -31,7 +31,7 @@ class SitesListView(generics.ListAPIView):
 
 
 class SiteDetailView(generics.RetrieveAPIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (SessionAuthentication, BasicAuthentication, TokenAuthentication)
     permission_classes = (IsAuthenticated,)
     serializer_class = SiteSerializer
 
@@ -43,7 +43,7 @@ class SiteDetailView(generics.RetrieveAPIView):
 
 
 class CameraImagesList(generics.ListAPIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (SessionAuthentication, BasicAuthentication, TokenAuthentication)
     permission_classes = (IsAuthenticated,)
     serializer_class = CameraImageSerializer
 
@@ -52,11 +52,12 @@ class CameraImagesList(generics.ListAPIView):
 
 
 class SiteObjectsListView(generics.ListAPIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (SessionAuthentication, BasicAuthentication, TokenAuthentication)
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         model_class = verify_model(self.kwargs['objects'])
+        print "model_class:", model_class
         return get_list_or_404(model_class.filter_user_site(self.request, self.kwargs))
 
     def get_serializer_class(self, *args, **kwargs):

@@ -24,12 +24,12 @@ from settings import settings
 
 
 class BaseModel(models.Model):
-    index = models.IntegerField()  # index to be used for sorting in some lists
-    enabled = models.BooleanField()  # if the site is enabled / disabled in the system
-    description = models.TextField()  # Site description, like address or other.
-    visible = models.BooleanField()  # Visible in the site list
-    location = models.TextField()  # gps coordinate, perhaps for later presentation on google maps.
-    type = models.IntegerField()  # hardware type
+    index = models.IntegerField(null=True)  # index to be used for sorting in some lists
+    enabled = models.BooleanField(default=True)  # if the site is enabled / disabled in the system
+    description = models.TextField(null=True)  # Site description, like address or other.
+    visible = models.BooleanField(default=True)  # Visible in the site list
+    location = models.TextField(null=True)  # gps coordinate, perhaps for later presentation on google maps.
+    type = models.IntegerField(null=True)  # hardware type
 
     class Meta:
         abstract = True
@@ -179,7 +179,7 @@ class Sensor(BaseModel):
         return result
 
 
-class AlarmLog(models.Model):
+class AlarmLog(BaseModel):
     last_alarm = models.DateTimeField()  # Last time the alarmzone was in alarm
     alarm_text = models.TextField()  # Text desription for the alarm
     site = models.ForeignKey(Site)
