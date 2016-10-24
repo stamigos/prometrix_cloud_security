@@ -57,7 +57,6 @@ class SiteObjectsListView(generics.ListAPIView):
 
     def get_queryset(self):
         model_class = verify_model(self.kwargs['objects'])
-        print "model_class:", model_class
         return get_list_or_404(model_class.filter_user_site(self.request, self.kwargs))
 
     def get_serializer_class(self, *args, **kwargs):
