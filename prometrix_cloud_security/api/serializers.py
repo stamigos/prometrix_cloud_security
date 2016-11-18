@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from prometrix_cloud_security.models import Site, Sensor, Camera, AlarmZone, CameraImage, AlarmLog
+from prometrix_cloud_security.models import Site, Sensor, Camera, AlarmZone, CameraImage, AlarmLog, Light
 
 
 class SiteSerializer(serializers.ModelSerializer):
@@ -32,8 +32,12 @@ class AlarmLogSerializer(serializers.ModelSerializer):
         model = AlarmLog
 
 
+class LightSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Light
+
 serializer_classes = dict(sites=SiteSerializer, sensors=SensorSerializer, cameras=CameraSerializer,
                           alarm_zones=AlarmZoneSerializer, camera_images=CameraImageSerializer,
-                          alarm_logs=AlarmLogSerializer)
+                          alarm_logs=AlarmLogSerializer, lights=LightSerializer)
 
 

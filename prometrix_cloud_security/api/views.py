@@ -7,14 +7,15 @@ from rest_framework.exceptions import APIException
 
 from django.shortcuts import get_object_or_404, get_list_or_404
 
-from prometrix_cloud_security.models import Site, Sensor, Camera, AlarmZone, CameraImage, AlarmLog
+from prometrix_cloud_security.models import Site, Sensor, Camera, AlarmZone, CameraImage, AlarmLog, Light
 from .serializers import SiteSerializer, SensorSerializer, CameraSerializer,\
     AlarmZoneSerializer, CameraImageSerializer, serializer_classes
 from prometrix_cloud_security.utils import ThreadedQueue, to_list
 
 
 def verify_model(objects):
-    base_models = dict(alarm_zones=AlarmZone, cameras=Camera, sensors=Sensor, sites=Site, alarm_logs=AlarmLog)
+    base_models = dict(alarm_zones=AlarmZone, cameras=Camera, sensors=Sensor, sites=Site,
+                       alarm_logs=AlarmLog, lights=Light)
     try:
         return base_models[objects]
     except KeyError:
@@ -65,7 +66,7 @@ class SiteObjectsListView(generics.ListAPIView):
 
 
 class SiteObjectDetailView(generics.RetrieveAPIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (SessionAuthentication, BasicAuthentication, TokenAuthentication)
     permission_classes = (IsAuthenticated,)
 
     def retrieve(self, request, *args, **kwargs):
@@ -81,7 +82,7 @@ class SiteObjectDetailView(generics.RetrieveAPIView):
 
 
 class SiteObjectEnableView(APIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (SessionAuthentication, BasicAuthentication, TokenAuthentication)
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, site_id, objects, object_id):
@@ -93,7 +94,7 @@ class SiteObjectEnableView(APIView):
 
 
 class SiteObjectDisableView(APIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (SessionAuthentication, BasicAuthentication, TokenAuthentication)
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, site_id, objects, object_id):
@@ -106,7 +107,7 @@ class SiteObjectDisableView(APIView):
 
 
 class AlarmZoneActivateView(APIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (SessionAuthentication, BasicAuthentication, TokenAuthentication)
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, site_id, alarm_zone_id):
@@ -126,7 +127,7 @@ class AlarmZoneActivateView(APIView):
 
 
 class AlarmZoneDeactivateView(APIView):
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (SessionAuthentication, BasicAuthentication, TokenAuthentication)
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, site_id, alarm_zone_id):
@@ -144,5 +145,16 @@ class AlarmZoneDeactivateView(APIView):
                                  )
                             )
         return Response(dict(id=alarm_zone.id, deactivated=False, result={}))
+
+
+class LastSavedImageView(generics.RetrieveAPIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication, TokenAuthentication)
+    permission_classes = (IsAuthenticated,)
+    serializer_class = CameraImageSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = CameraImage.get_last_saved_image(request, kwargs['site_id'])
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 

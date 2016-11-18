@@ -169,6 +169,10 @@ class Sensor(BaseModel):
     alarm_enable = models.BooleanField() # is the sensor currently in alarm state or not.
     timeout = models.IntegerField()  # number of seconds before next alarm is allowed to trigger from this sensor
     site = models.ForeignKey(Site)  # The site the alarmzone belongs to.
+    digital_output = models.IntegerField(null=True)  # (Binary value for the output port, 0=Off, 1=0000 0001, 2=0000 0010)
+    ambient_light = models.IntegerField(null=True)  # amibent light between 0-100lux
+    digital_inputs = models.IntegerField(null=True)  # (binary value for the digital inputs)
+    temperature = models.FloatField(null=True)  # ambient temperature degrees(c)
 
     def to_dict(self):
         result = dict((key, value) for key, value in self.__dict__.iteritems()
@@ -211,12 +215,18 @@ class Light(BaseModel):
     status = models.BooleanField()  # is the light currently switched on/off ?
     light_intensity = models.IntegerField()  # light intensity between 0-100%
     site = models.ForeignKey(Site)  # The site the alarmzone belongs to.
+    light_mode = models.IntegerField(null=True)  # (1=Standard, 2=Energy save, 3=Boost, 4=Strobe)
+    digital_output = models.CharField(null=True, max_length=50)  # (Binary value for the output port, 0=Off, 1=0000 0001, 2=0000 0010)
+    ambient_light = models.IntegerField(null=True)  # amibent light between 0-100lux
+    digital_inputs = models.IntegerField(null=True)  # (binary value for the digital inputs)
+    temperature = models.FloatField(null=True)  # ambient temperature degrees(c)
 
 
 class LightGroup(BaseModel):
     status = models.BooleanField()  # is the lightgroup currently switched on/off ?
     light_intensity = models.IntegerField()  # lightgrup intensity between 0-100%
     site = models.ForeignKey(Site)  # The site it belongs to
+    light = models.ManyToManyField(Light, related_name='lights')  # All the lights in this light group
 
 
 class CameraImage(models.Model):
@@ -284,3 +294,8 @@ class CameraImage(models.Model):
         return cls.objects.filter(site__id=kwargs['site_id'],
                                   site__users__in=[request.user.id],
                                   camera__id=kwargs['camera_id'])
+
+    @classmethod
+    def get_last_saved_image(cls, request, site_id):
+        return cls.objects.filter(site__id=site_id,
+                                  site__users__in=[request.user.id]).order_by("-id").first()
